@@ -2,7 +2,7 @@ import { Flame } from 'lucide-react';
 import { useStore, dateKey } from '../store';
 import { DAILY_PLAN } from '../data/plan';
 import type { Mode } from '../data/plan';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { ActivityRing } from '../components/ActivityRing';
 
 type DayLog = { mode: Mode; taken: string[] };
 
@@ -14,7 +14,6 @@ function calcStreak(logs: Record<string, DayLog>): number {
     d.setDate(d.getDate() - i);
     const key = dateKey(d);
     const log = logs[key];
-    // Today might not be logged yet — skip it without breaking the streak
     if (!log) {
       if (i === 0) continue;
       break;
@@ -30,7 +29,6 @@ function calcStreak(logs: Record<string, DayLog>): number {
     if (ratio >= 0.8) {
       streak++;
     } else if (i === 0) {
-      // Today is still in progress — don't break, but don't count it
       continue;
     } else {
       break;
@@ -39,85 +37,126 @@ function calcStreak(logs: Record<string, DayLog>): number {
   return streak;
 }
 
-function getAdherence(logs: Record<string, DayLog>, days: number) {
-  const result = [];
-  const today = new Date();
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const key = dateKey(d);
-    const log = logs[key];
-    let pct = 0;
-    if (log) {
-      const plan = DAILY_PLAN[log.mode];
-      const required = (plan as unknown as { slot: string; items: { id: string; optional?: boolean }[] }[])
-        .flatMap(s => s.items.filter(x => !x.optional).map(x => x.id));
-      pct = required.length
-        ? Math.round((log.taken.filter(id => required.includes(id)).length / required.length) * 100)
-        : 0;
-    }
-    result.push({ day: d.toLocaleDateString('uk-UA', { weekday: 'short' }), pct });
-  }
-  return result;
+function getPct(log: DayLog | undefined): number | null {
+  if (!log) return null;
+  const plan = DAILY_PLAN[log.mode];
+  const required = (plan as unknown as { slot: string; items: { id: string; optional?: boolean }[] }[])
+    .flatMap(s => s.items.filter(x => !x.optional).map(x => x.id));
+  if (!required.length) return null;
+  return log.taken.filter(id => required.includes(id)).length / required.length;
 }
 
-function CalendarHeatmap({ logs }: { logs: Record<string, DayLog> }) {
+function ringColor(pct: number): string {
+  if (pct >= 0.8) return '#34C759';
+  if (pct >= 0.5) return '#FFCC00';
+  return '#FF3B30';
+}
+
+function RecentDays({ logs }: { logs: Record<string, DayLog> }) {
+  const today = new Date();
+  const days = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (13 - i));
+    const key = dateKey(d);
+    const pct = getPct(logs[key]);
+    return { d, key, pct, isToday: i === 13 };
+  });
+
+  return (
+    <div className="overflow-x-auto -mx-4">
+      <div className="flex gap-2 px-4 pb-1" style={{ minWidth: 'max-content' }}>
+        {days.map(({ d, key, pct, isToday }) => {
+          const color = pct !== null ? ringColor(pct) : 'rgba(120,120,128,0.25)';
+          const track = pct !== null ? `${color}26` : 'rgba(120,120,128,0.10)';
+          const label = d.toLocaleDateString('uk-UA', { weekday: 'short' });
+          const dayNum = d.getDate();
+          return (
+            <div key={key} className="flex flex-col items-center gap-1.5">
+              <ActivityRing
+                progress={pct ?? 0}
+                size={56}
+                stroke={6}
+                color={color}
+                track={track}
+              >
+                <span className="text-[10px] font-bold tabular-nums" style={{ color: pct !== null ? 'var(--label)' : 'var(--label-tertiary)' }}>
+                  {pct !== null ? `${Math.round(pct * 100)}%` : '—'}
+                </span>
+              </ActivityRing>
+              <span
+                className="text-[10px] font-semibold"
+                style={{ color: isToday ? 'var(--tint)' : 'var(--label-secondary)' }}
+              >
+                {label}
+              </span>
+              <span
+                className="text-[10px]"
+                style={{ color: isToday ? 'var(--tint)' : 'var(--label-tertiary)' }}
+              >
+                {dayNum}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MonthCalendar({ logs }: { logs: Record<string, DayLog> }) {
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
   const offset = (firstDay + 6) % 7;
-
-  function getPct(day: number): number | null {
-    const d = new Date(year, month, day);
-    const key = dateKey(d);
-    const log = logs[key];
-    if (!log) return null;
-    const plan = DAILY_PLAN[log.mode];
-    const required = (plan as unknown as { slot: string; items: { id: string; optional?: boolean }[] }[])
-      .flatMap(s => s.items.filter(x => !x.optional).map(x => x.id));
-    if (!required.length) return null;
-    return log.taken.filter(id => required.includes(id)).length / required.length;
-  }
-
-  function getColor(pct: number | null): string {
-    if (pct === null) return 'var(--bg-card-2)';
-    if (pct >= 0.8) return '#34C759';
-    if (pct >= 0.5) return '#FFCC00';
-    return '#FF3B30';
-  }
-
   const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
 
   return (
     <div>
-      <div className="grid grid-cols-7 mb-1">
-        {weekDays.map(d => (
-          <div key={d} className="text-center text-[11px] text-label-secondary">{d}</div>
+      <div className="grid grid-cols-7 mb-2">
+        {weekDays.map(wd => (
+          <div key={wd} className="text-center text-[11px] text-label-secondary">{wd}</div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-[5px]">
         {Array.from({ length: offset }).map((_, i) => <div key={`e${i}`} />)}
         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
-          const pct = getPct(day);
-          const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+          const d = new Date(year, month, day);
+          const key = dateKey(d);
+          const pct = getPct(logs[key]);
+          const isToday = day === today.getDate();
+          const future = d > today;
+
           return (
-            <div
-              key={day}
-              title={pct !== null ? `${Math.round(pct * 100)}%` : undefined}
-              className="aspect-square rounded-full flex items-center justify-center text-[11px] font-medium"
-              style={{
-                background: getColor(pct),
-                color: pct !== null && pct >= 0.5 ? '#fff' : 'var(--label-secondary)',
-                outline: isToday ? '2px solid var(--tint)' : 'none',
-                outlineOffset: '1px',
-              }}
-            >
-              {day}
+            <div key={day} className="flex flex-col items-center gap-0.5">
+              <ActivityRing
+                progress={!future && pct !== null ? pct : 0}
+                size={36}
+                stroke={4}
+                color={pct !== null ? ringColor(pct) : 'rgba(120,120,128,0.2)'}
+                track={future ? 'rgba(120,120,128,0.06)' : (pct !== null ? `${ringColor(pct)}22` : 'rgba(120,120,128,0.10)')}
+              >
+                <span
+                  className="text-[9px] font-semibold tabular-nums"
+                  style={{
+                    color: isToday ? 'var(--tint)' : pct !== null ? 'var(--label)' : 'var(--label-tertiary)',
+                  }}
+                >
+                  {day}
+                </span>
+              </ActivityRing>
             </div>
           );
         })}
+      </div>
+      <div className="flex gap-4 mt-3">
+        {([['#34C759', '≥80%'], ['#FFCC00', '50–79%'], ['#FF3B30', '<50%']] as [string, string][]).map(([c, l]) => (
+          <div key={l} className="flex items-center gap-1.5 text-[11px] text-label-secondary">
+            <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: c }} />
+            {l}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -133,7 +172,6 @@ export function History() {
   const { state } = useStore();
   const logs = state.logs as Record<string, DayLog>;
   const streak = calcStreak(logs);
-  const data7 = getAdherence(logs, 7);
   const hasData = Object.keys(logs).length > 0;
 
   if (!hasData) {
@@ -164,44 +202,18 @@ export function History() {
           </div>
         </div>
 
-        {/* Calendar heatmap */}
+        {/* Recent 14 days as rings */}
+        <div className="rounded-ios-xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <h2 className="text-[17px] font-semibold text-label mb-4">Останні 14 днів</h2>
+          <RecentDays logs={logs} />
+        </div>
+
+        {/* Month calendar as rings */}
         <div className="rounded-ios-xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           <h2 className="text-[17px] font-semibold text-label mb-3">
             {new Date().toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' })}
           </h2>
-          <CalendarHeatmap logs={logs} />
-          <div className="flex gap-4 mt-3">
-            {([['#34C759', '≥80%'], ['#FFCC00', '50–79%'], ['#FF3B30', '<50%']] as [string, string][]).map(([c, l]) => (
-              <div key={l} className="flex items-center gap-1.5 text-[12px] text-label-secondary">
-                <div className="h-3 w-3 rounded-full shrink-0" style={{ background: c }} />
-                {l}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bar chart 7 days */}
-        <div className="rounded-ios-xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-          <h2 className="text-[17px] font-semibold text-label mb-4">Дотримання за 7 днів</h2>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={data7} barSize={28}>
-              <XAxis dataKey="day" tick={{ fontSize: 12, fill: 'var(--label-secondary)' }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, 100]} hide />
-              <Tooltip
-                formatter={(v: number) => [`${v}%`, 'Дотримання']}
-                contentStyle={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--separator)',
-                  borderRadius: 10,
-                  fontSize: 13,
-                  color: 'var(--label)',
-                }}
-                itemStyle={{ color: 'var(--label-secondary)' }}
-                labelStyle={{ color: 'var(--label)' }}
-              />
-              <Bar dataKey="pct" fill="#34C759" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <MonthCalendar logs={logs} />
         </div>
       </div>
     </div>
