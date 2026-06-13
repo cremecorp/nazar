@@ -2,7 +2,18 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { DAILY_PLAN, type Mode } from './data/plan';
 
 const KEY = 'suppl-tracker:v1';
-const todayStr = () => new Date().toISOString().slice(0, 10);
+
+// Local-date key (YYYY-MM-DD). Using local components — not toISOString (UTC) —
+// keeps the day boundary at the user's local midnight and keeps all date keys
+// (store, history, calendar) consistent with each other.
+export function dateKey(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+const todayStr = () => dateKey();
 
 export type { Mode };
 
@@ -45,7 +56,7 @@ const initial: AppState = {
 function addMonths(date: Date, n: number): string {
   const d = new Date(date);
   d.setMonth(d.getMonth() + n);
-  return d.toISOString().slice(0, 10);
+  return dateKey(d);
 }
 
 function loadState(): AppState {
