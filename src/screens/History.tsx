@@ -1,5 +1,5 @@
 import { Flame } from 'lucide-react';
-import { useStore } from '../store';
+import { useStore, dateKey } from '../store';
 import { DAILY_PLAN } from '../data/plan';
 import type { Mode } from '../data/plan';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
@@ -12,7 +12,7 @@ function calcStreak(logs: Record<string, DayLog>): number {
   for (let i = 0; i < 365; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
+    const key = dateKey(d);
     const log = logs[key];
     // Today might not be logged yet — skip it without breaking the streak
     if (!log) {
@@ -45,7 +45,7 @@ function getAdherence(logs: Record<string, DayLog>, days: number) {
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
+    const key = dateKey(d);
     const log = logs[key];
     let pct = 0;
     if (log) {
@@ -71,7 +71,7 @@ function CalendarHeatmap({ logs }: { logs: Record<string, DayLog> }) {
 
   function getPct(day: number): number | null {
     const d = new Date(year, month, day);
-    const key = d.toISOString().slice(0, 10);
+    const key = dateKey(d);
     const log = logs[key];
     if (!log) return null;
     const plan = DAILY_PLAN[log.mode];

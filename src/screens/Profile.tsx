@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { useStore } from '../store';
+import { useStore, dateKey } from '../store';
 import { BLOODWORK } from '../data/reference';
 import { Download, RotateCcw, Moon, Sun, Monitor } from 'lucide-react';
 
 function differenceInDays(start: string): number {
-  const s = new Date(start);
+  // Parse as local date (YYYY-MM-DD) to avoid UTC-midnight-shift off-by-one
+  const [y, m, d] = start.split('-').map(Number);
+  const s = new Date(y, m - 1, d);
   const now = new Date();
   return Math.floor((now.getTime() - s.getTime()) / (1000 * 60 * 60 * 24));
 }
@@ -40,7 +42,7 @@ export function Profile() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `supplement-tracker-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `supplement-tracker-${dateKey()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -48,7 +50,7 @@ export function Profile() {
   const omega3Days = courses.omega3 ? differenceInDays(courses.omega3.startDate) : null;
   const collagenDays = courses.collagen ? differenceInDays(courses.collagen.startDate) : null;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dateKey();
   const reviewOverdue = nextReviewDate && today >= nextReviewDate;
 
   return (
@@ -91,7 +93,11 @@ export function Profile() {
                 onChange={e => setWeightInput(e.target.value)}
                 onBlur={() => {
                   const v = parseFloat(weightInput);
-                  if (v > 30 && v < 300) setState(s => ({ ...s, profile: { ...s.profile, weightKg: v } }));
+                  if (v > 30 && v < 300) {
+                    setState(s => ({ ...s, profile: { ...s.profile, weightKg: v } }));
+                  } else {
+                    setWeightInput(String(profile.weightKg));
+                  }
                 }}
                 className="w-16 text-right text-[17px] text-label-secondary bg-transparent outline-none"
                 aria-label="Вага в кг"
@@ -126,7 +132,7 @@ export function Profile() {
                 </>
               )}
               <button
-                onClick={() => setState(s => ({ ...s, courses: { ...s.courses, omega3: { startDate: new Date().toISOString().slice(0, 10) } } }))}
+                onClick={() => setState(s => ({ ...s, courses: { ...s.courses, omega3: { startDate: dateKey() } } }))}
                 className="mt-2 text-[14px] text-tint"
               >
                 {omega3Days !== null ? 'Перезапустити курс' : 'Почати курс'}
@@ -149,7 +155,7 @@ export function Profile() {
                 </>
               )}
               <button
-                onClick={() => setState(s => ({ ...s, courses: { ...s.courses, collagen: { startDate: new Date().toISOString().slice(0, 10) } } }))}
+                onClick={() => setState(s => ({ ...s, courses: { ...s.courses, collagen: { startDate: dateKey() } } }))}
                 className="mt-2 text-[14px] text-tint"
               >
                 {collagenDays !== null ? 'Перезапустити курс' : 'Почати курс'}
