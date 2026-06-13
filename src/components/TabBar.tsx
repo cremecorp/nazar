@@ -12,9 +12,8 @@ const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
 export function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 flex border-t"
+      className="tab-bar-bg fixed bottom-0 inset-x-0 flex border-t"
       style={{
-        background: 'rgba(248,248,250,0.85)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderColor: 'var(--separator)',

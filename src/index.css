@@ -50,3 +50,11 @@ html, body {
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* Tab bar glass effect — adapts to dark mode */
+.tab-bar-bg {
+  background: rgba(248, 248, 250, 0.85);
+}
+.dark .tab-bar-bg {
+  background: rgba(28, 28, 30, 0.85);
+}

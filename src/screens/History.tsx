@@ -14,14 +14,27 @@ function calcStreak(logs: Record<string, DayLog>): number {
     d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);
     const log = logs[key];
-    if (!log) break;
+    // Today might not be logged yet — skip it without breaking the streak
+    if (!log) {
+      if (i === 0) continue;
+      break;
+    }
     const plan = DAILY_PLAN[log.mode];
     const required = (plan as unknown as { slot: string; items: { id: string; optional?: boolean }[] }[])
       .flatMap(s => s.items.filter(x => !x.optional).map(x => x.id));
-    if (!required.length) break;
+    if (!required.length) {
+      if (i === 0) continue;
+      break;
+    }
     const ratio = log.taken.filter(id => required.includes(id)).length / required.length;
-    if (ratio >= 0.8) streak++;
-    else break;
+    if (ratio >= 0.8) {
+      streak++;
+    } else if (i === 0) {
+      // Today is still in progress — don't break, but don't count it
+      continue;
+    } else {
+      break;
+    }
   }
   return streak;
 }
@@ -176,7 +189,15 @@ export function History() {
               <YAxis domain={[0, 100]} hide />
               <Tooltip
                 formatter={(v: number) => [`${v}%`, 'Дотримання']}
-                contentStyle={{ background: 'var(--bg-card)', border: 'none', borderRadius: 10, fontSize: 13 }}
+                contentStyle={{
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--separator)',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  color: 'var(--label)',
+                }}
+                itemStyle={{ color: 'var(--label-secondary)' }}
+                labelStyle={{ color: 'var(--label)' }}
               />
               <Bar dataKey="pct" fill="#34C759" radius={[6, 6, 0, 0]} />
             </BarChart>

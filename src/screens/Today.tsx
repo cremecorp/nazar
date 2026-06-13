@@ -43,15 +43,16 @@ export function Today() {
     .filter((id: string) => !day.taken.includes(id))
     .map((id: string) => get(id).name);
 
-  const dateStr = new Date().toLocaleDateString('uk-UA', {
+  const rawDate = new Date().toLocaleDateString('uk-UA', {
     weekday: 'long', day: 'numeric', month: 'long',
   });
+  const dateStr = rawDate.charAt(0).toUpperCase() + rawDate.slice(1);
 
   return (
     <div className="min-h-screen bg-grouped pb-32">
       <header className="sticky top-0 z-10 px-4 pt-12 pb-3" style={{ background: 'var(--bg-grouped)' }}>
         <h1 className="text-[34px] font-bold leading-tight text-label">Сьогодні</h1>
-        <p className="text-[15px] capitalize text-label-secondary">{dateStr}</p>
+        <p className="text-[15px] text-label-secondary">{dateStr}</p>
         <div className="mt-3">
           <SegmentedControl value={day.mode} onChange={setMode} options={MODE_OPTIONS} />
         </div>

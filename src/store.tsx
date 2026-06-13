@@ -42,14 +42,31 @@ const initial: AppState = {
   logs: {},
 };
 
+function addMonths(date: Date, n: number): string {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + n);
+  return d.toISOString().slice(0, 10);
+}
+
 function loadState(): AppState {
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return initial;
-    return { ...initial, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<AppState>;
+      return {
+        ...initial,
+        ...parsed,
+        profile: { ...initial.profile, ...(parsed.profile ?? {}) },
+        courses: { ...initial.courses, ...(parsed.courses ?? {}) },
+      };
+    }
   } catch {
-    return initial;
+    // fall through to defaults
   }
+  return {
+    ...initial,
+    nextReviewDate: addMonths(new Date(), 3),
+  };
 }
 
 type StoreValue = {
