@@ -1,41 +1,41 @@
-# Добавки — Supplement Tracker
+# Supplement Tracker
 
-Персональний PWA-застосунок для відстеження прийому спортивних добавок. Дизайн у стилі **Apple Health**, мова інтерфейсу — **українська**.
+A personal PWA for tracking sports supplement intake. Designed in the style of **Apple Health** following Apple Human Interface Guidelines.
 
-**🌐 [Відкрити застосунок](https://cremecorp.github.io/-nazar/)**
+**🌐 [Open App](https://cremecorp.github.io/-nazar/)**
 
 ---
 
-## Можливості
+## Features
 
-| Екран | Функціонал |
+| Screen | What it does |
 |---|---|
-| **Сьогодні** | Вибір режиму дня (Падел / Падел+F45 / Відпочинок), список добавок із дозами, кільце прогресу, відмітка одним тапом |
-| **Вода** | Трекер гідратації з кнопками +250/+500 мл, власне кільце прогресу, скидання опівночі |
-| **Історія** | Серія (streak), місячний calendar heatmap, стовпчастий графік дотримання за 7 днів |
-| **Довідник** | 9 розділів: режими та дози, умови прийому, тривалість курсів, ШМТ+коліна, гідратація, аналізи, що не поєднувати, норми EFSA |
-| **Профіль** | Параметри, прогрес курсів Омега-3 і Колагену, чекліст аналізів, перемикач теми, експорт JSON |
+| **Today** | Choose day mode (Padel / Padel+F45 / Rest), supplement list with doses, progress ring, one-tap check-off |
+| **Water** | Hydration tracker with +250/+500 ml buttons, progress ring, auto-reset at midnight |
+| **History** | Streak counter, monthly calendar heatmap, 7-day adherence bar chart |
+| **Library** | 9 reference sections: dosing by mode, intake conditions, course durations, CMT/knee notes, hydration, bloodwork, combinations to avoid, EFSA limits |
+| **Profile** | Personal stats, Omega-3 & Collagen course progress bars, bloodwork checklist, theme switcher, JSON data export |
 
-### Ключові деталі
-- Темна та світла теми (`prefers-color-scheme` + ручне перемикання)
-- Збереження даних у `localStorage` — без бекенду, повністю офлайн
-- PWA: installable, service worker, офлайн-режим
-- Тактильний відгук при відмітці (Vibration API)
-- Адаптивний під мобільний, цілі ≥ 44 pt (HIG)
+### Highlights
+- Light & dark theme (`prefers-color-scheme` + manual override)
+- All data stored in `localStorage` — no backend, fully offline
+- PWA: installable on home screen, service worker, offline support
+- Haptic feedback on check-off (Vibration API)
+- Mobile-first layout, touch targets ≥ 44 pt (HIG)
 
 ---
 
-## Стек
+## Stack
 
 - **React 18 + Vite + TypeScript**
-- **Tailwind CSS** з iOS-токенами (semantic colors, `--bg-grouped`, `--tint` тощо)
-- **lucide-react** — іконки у стилі SF Symbols
-- **recharts** — графіки в Історії
+- **Tailwind CSS** with iOS semantic color tokens (`--bg-grouped`, `--tint`, etc.)
+- **lucide-react** — SF Symbols-style icons
+- **recharts** — charts in the History tab
 - **vite-plugin-pwa** — manifest + service worker
 
 ---
 
-## Запуск локально
+## Local Development
 
 ```bash
 git clone https://github.com/cremecorp/-nazar.git
@@ -44,33 +44,33 @@ npm install
 npm run dev
 ```
 
-Відкрити: `http://localhost:5173`
+Open: `http://localhost:5173`
 
 ---
 
-## Деплой на GitHub Pages
+## Deploy to GitHub Pages
 
-Деплой відбувається **автоматично** при пуші в `main` через GitHub Actions.
+Deployment is **automatic** on every push to `main` via GitHub Actions.
 
-Щоб увімкнути вперше:
-1. `Settings → Pages → Source → GitHub Actions`
-2. Запушити будь-який коміт у `main`
+To enable for the first time:
+1. Go to **Settings → Pages → Source → GitHub Actions**
+2. Push any commit to `main`
 
-Сайт: `https://cremecorp.github.io/-nazar/`
+Live URL: `https://cremecorp.github.io/-nazar/`
 
 ---
 
-## Структура проєкту
+## Project Structure
 
 ```
 src/
 ├── data/
-│   ├── supplements.ts   # 7 добавок з дозами, описами, застереженнями
-│   ├── plan.ts          # DAILY_PLAN для 3 режимів
-│   ├── modes.ts         # MODES (padel / padelF45 / rest)
-│   └── reference.ts     # Довідникові дані (CONDITIONS, HYDRATION, BLOODWORK…)
+│   ├── supplements.ts   # 7 supplements with doses, benefits, cautions
+│   ├── plan.ts          # DAILY_PLAN for 3 day modes
+│   ├── modes.ts         # Mode definitions (padel / padelF45 / rest)
+│   └── reference.ts     # Reference data (CONDITIONS, HYDRATION, BLOODWORK…)
 ├── components/
-│   ├── ActivityRing.tsx  # SVG-кільце прогресу (як Apple Health)
+│   ├── ActivityRing.tsx  # Animated SVG progress ring (Apple Health style)
 │   ├── SegmentedControl.tsx
 │   ├── SupplementRow.tsx
 │   ├── WaterCard.tsx
@@ -82,9 +82,9 @@ src/
 │   ├── Library.tsx
 │   ├── Profile.tsx
 │   └── SupplementDetail.tsx
-└── store.tsx             # Контекст + localStorage (suppl-tracker:v1)
+└── store.tsx             # React context + localStorage (key: suppl-tracker:v1)
 ```
 
 ---
 
-> Дані протоколу звірені з нормами **EFSA (ЄС)**. Застосунок не є медичною консультацією.
+> Protocol data verified against **EFSA (EU)** tolerable upper intake levels. This app is not medical advice.
