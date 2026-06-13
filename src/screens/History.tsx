@@ -52,57 +52,6 @@ function ringColor(pct: number): string {
   return '#FF3B30';
 }
 
-function RecentDays({ logs }: { logs: Record<string, DayLog> }) {
-  const today = new Date();
-  const days = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() - (13 - i));
-    const key = dateKey(d);
-    const pct = getPct(logs[key]);
-    return { d, key, pct, isToday: i === 13 };
-  });
-
-  return (
-    <div className="overflow-x-auto -mx-4">
-      <div className="flex gap-2 px-4 pb-1" style={{ minWidth: 'max-content' }}>
-        {days.map(({ d, key, pct, isToday }) => {
-          const color = pct !== null ? ringColor(pct) : 'rgba(120,120,128,0.25)';
-          const track = pct !== null ? `${color}26` : 'rgba(120,120,128,0.10)';
-          const label = d.toLocaleDateString('uk-UA', { weekday: 'short' });
-          const dayNum = d.getDate();
-          return (
-            <div key={key} className="flex flex-col items-center gap-1.5">
-              <ActivityRing
-                progress={pct ?? 0}
-                size={56}
-                stroke={6}
-                color={color}
-                track={track}
-              >
-                <span className="text-[10px] font-bold tabular-nums" style={{ color: pct !== null ? 'var(--label)' : 'var(--label-tertiary)' }}>
-                  {pct !== null ? `${Math.round(pct * 100)}%` : '—'}
-                </span>
-              </ActivityRing>
-              <span
-                className="text-[10px] font-semibold"
-                style={{ color: isToday ? 'var(--tint)' : 'var(--label-secondary)' }}
-              >
-                {label}
-              </span>
-              <span
-                className="text-[10px]"
-                style={{ color: isToday ? 'var(--tint)' : 'var(--label-tertiary)' }}
-              >
-                {dayNum}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function MonthCalendar({ logs }: { logs: Record<string, DayLog> }) {
   const today = new Date();
   const year = today.getFullYear();
@@ -119,7 +68,7 @@ function MonthCalendar({ logs }: { logs: Record<string, DayLog> }) {
           <div key={wd} className="text-center text-[11px] text-label-secondary">{wd}</div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-[5px]">
+      <div className="grid grid-cols-7 gap-y-2">
         {Array.from({ length: offset }).map((_, i) => <div key={`e${i}`} />)}
         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
           const d = new Date(year, month, day);
@@ -127,20 +76,30 @@ function MonthCalendar({ logs }: { logs: Record<string, DayLog> }) {
           const pct = getPct(logs[key]);
           const isToday = day === today.getDate();
           const future = d > today;
+          const color = pct !== null ? ringColor(pct) : 'rgba(120,120,128,0.22)';
+          const track = future
+            ? 'rgba(120,120,128,0.06)'
+            : pct !== null
+              ? `${ringColor(pct)}28`
+              : 'rgba(120,120,128,0.10)';
 
           return (
-            <div key={day} className="flex flex-col items-center gap-0.5">
+            <div key={day} className="flex justify-center">
               <ActivityRing
                 progress={!future && pct !== null ? pct : 0}
-                size={36}
-                stroke={4}
-                color={pct !== null ? ringColor(pct) : 'rgba(120,120,128,0.2)'}
-                track={future ? 'rgba(120,120,128,0.06)' : (pct !== null ? `${ringColor(pct)}22` : 'rgba(120,120,128,0.10)')}
+                size={44}
+                stroke={5}
+                color={color}
+                track={track}
               >
                 <span
-                  className="text-[9px] font-semibold tabular-nums"
+                  className="text-[11px] font-semibold tabular-nums"
                   style={{
-                    color: isToday ? 'var(--tint)' : pct !== null ? 'var(--label)' : 'var(--label-tertiary)',
+                    color: isToday
+                      ? 'var(--tint)'
+                      : pct !== null
+                        ? 'var(--label)'
+                        : 'var(--label-tertiary)',
                   }}
                 >
                   {day}
@@ -150,7 +109,7 @@ function MonthCalendar({ logs }: { logs: Record<string, DayLog> }) {
           );
         })}
       </div>
-      <div className="flex gap-4 mt-3">
+      <div className="flex gap-4 mt-4">
         {([['#34C759', '≥80%'], ['#FFCC00', '50–79%'], ['#FF3B30', '<50%']] as [string, string][]).map(([c, l]) => (
           <div key={l} className="flex items-center gap-1.5 text-[11px] text-label-secondary">
             <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: c }} />
@@ -184,6 +143,11 @@ export function History() {
     );
   }
 
+  const monthTitle = (() => {
+    const raw = new Date().toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' });
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  })();
+
   return (
     <div className="min-h-screen bg-grouped pb-32">
       <header className="sticky top-0 z-10 px-4 pt-12 pb-3" style={{ background: 'var(--bg-grouped)' }}>
@@ -191,7 +155,7 @@ export function History() {
       </header>
 
       <div className="px-4 space-y-4">
-        {/* Streak card */}
+        {/* Streak */}
         <div className="rounded-ios-xl bg-card p-5 flex items-center gap-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
           <div className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(255,149,0,.15)' }}>
             <Flame size={30} color="#FF9500" />
@@ -202,17 +166,9 @@ export function History() {
           </div>
         </div>
 
-        {/* Recent 14 days as rings */}
+        {/* Month calendar */}
         <div className="rounded-ios-xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-          <h2 className="text-[17px] font-semibold text-label mb-4">Останні 14 днів</h2>
-          <RecentDays logs={logs} />
-        </div>
-
-        {/* Month calendar as rings */}
-        <div className="rounded-ios-xl bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-          <h2 className="text-[17px] font-semibold text-label mb-3">
-            {new Date().toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' })}
-          </h2>
+          <h2 className="text-[17px] font-semibold text-label mb-4">{monthTitle}</h2>
           <MonthCalendar logs={logs} />
         </div>
       </div>
