@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  base: '/-nazar/',
+  base: '/nazar/',
   plugins: [
     react(),
     VitePWA({
@@ -16,7 +16,7 @@ export default defineConfig({
         background_color: '#F2F2F7',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: '/nazar/',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
